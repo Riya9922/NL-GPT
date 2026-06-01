@@ -10,20 +10,23 @@ import sys
 import os
 import json
 
-# Get the directory where this script is located
-script_dir = os.path.dirname(os.path.abspath(__file__))
-backend_path = os.path.join(script_dir, "backend")
+# CRITICAL: Change to backend directory BEFORE importing
+backend_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "backend")
+os.chdir(backend_dir)
 
-# Add both paths to sys.path
-sys.path.insert(0, backend_path)
-sys.path.insert(0, script_dir)
+# Add backend to sys.path
+sys.path.insert(0, backend_dir)
 
-# Debug: Print paths (will show in Streamlit logs)
-print(f"[DEBUG] Script directory: {script_dir}")
-print(f"[DEBUG] Backend path: {backend_path}")
-print(f"[DEBUG] sys.path: {sys.path[:3]}")
+# Debug: Show what we're doing
+print("=" * 60)
+print("[DEBUG] Current directory:", os.getcwd())
+print("[DEBUG] Backend directory:", backend_dir)
+print("[DEBUG] Backend exists:", os.path.exists(backend_dir))
+if os.path.exists(backend_dir):
+    print("[DEBUG] Backend contents:", os.listdir(backend_dir))
+print("=" * 60)
 
-# Import the FastAPI app and services
+# Now import from app
 from app.main import app
 from app.config import get_settings
 from app.models.request import EvaluationRequest
