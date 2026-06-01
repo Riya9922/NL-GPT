@@ -1,0 +1,297 @@
+{
+  "evaluation_id": "c2482aa0-fc14-4aa1-bd1f-1612f884ea21",
+  "status": "completed",
+  "analysis": {
+    "claims": [
+      {
+        "id": "c1",
+        "text": "Users prefer convenience.",
+        "span": {
+          "start": 0,
+          "end": 26
+        },
+        "type": "factual"
+      },
+      {
+        "id": "c2",
+        "text": "Price sensitivity is secondary to ease of access.",
+        "span": {
+          "start": 28,
+          "end": 78
+        },
+        "type": "factual"
+      }
+    ],
+    "assumptions": [
+      {
+        "id": "a1",
+        "text": "Users prefer convenience.",
+        "related_claim_ids": [
+          "c1"
+        ],
+        "derived_from_hint": "Survey Question 7"
+      },
+      {
+        "id": "a2",
+        "text": "Survey respondents represent the broader target market.",
+        "related_claim_ids": [
+          "c1",
+          "c2"
+        ],
+        "derived_from_hint": "Survey methodology"
+      }
+    ],
+    "reasoning_steps": [
+      {
+        "id": "r1",
+        "step": "Survey results show a majority favor convenience over price.",
+        "order": 1,
+        "supports_claim_ids": [
+          "c1"
+        ]
+      },
+      {
+        "id": "r2",
+        "step": "Demand is driven by ease of access rather than price sensitivity.",
+        "order": 2,
+        "supports_claim_ids": [
+          "c1",
+          "c2"
+        ]
+      }
+    ],
+    "unsupported_statements": [],
+    "completeness_notes": "Answer cites survey data but does not discuss sample size or demographic breakdown of respondents."
+  },
+  "attribution": {
+    "chains": [
+      {
+        "claim_id": "c1",
+        "claim_text": "Users prefer convenience.",
+        "reasoning_step": {
+          "step_id": "r1",
+          "text": "Survey results show a majority favor convenience over price."
+        },
+        "source": {
+          "source_id": "s1",
+          "source_type": "user_context",
+          "label": "Survey Question 7",
+          "url": null,
+          "citation_index": 7
+        },
+        "evidence": {
+          "supporting": [
+            {
+              "text": "73% of respondents selected convenience",
+              "excerpt": "When asked to choose between convenience and price, 73% of survey respondents indicated convenience as their primary factor."
+            }
+          ],
+          "counter": [
+            {
+              "text": "19% selected price",
+              "excerpt": "Only 19% of respondents cited price as the deciding factor."
+            }
+          ]
+        },
+        "assumption": {
+          "text": "Users prefer convenience.",
+          "derived_from": "Survey Question 7",
+          "supporting_evidence": "73% respondents selected convenience",
+          "counter_evidence": "19% selected price"
+        },
+        "attribution_gap": null
+      },
+      {
+        "claim_id": "c2",
+        "claim_text": "Price sensitivity is secondary to ease of access.",
+        "reasoning_step": {
+          "step_id": "r2",
+          "text": "Demand is driven by ease of access rather than price sensitivity."
+        },
+        "source": {
+          "source_id": "s1",
+          "source_type": "user_context",
+          "label": "Survey Question 7",
+          "url": null,
+          "citation_index": 7
+        },
+        "evidence": {
+          "supporting": [
+            {
+              "text": "73% prioritized convenience over price",
+              "excerpt": "Survey data shows convenience outweighs price considerations for the majority."
+            }
+          ],
+          "counter": [
+            {
+              "text": "19% selected price as primary factor",
+              "excerpt": "A minority segment remains price-sensitive."
+            }
+          ]
+        },
+        "assumption": {
+          "text": "Survey respondents represent the broader target market.",
+          "derived_from": "Survey methodology",
+          "supporting_evidence": "73% prioritized convenience over price",
+          "counter_evidence": "19% selected price as primary factor"
+        },
+        "attribution_gap": null
+      }
+    ],
+    "unlinked_claims": [],
+    "meta": {
+      "sources_respected": [
+        "user_context",
+        "research"
+      ],
+      "chains_complete": 2,
+      "chains_with_gaps": 0
+    }
+  },
+  "evaluation": {
+    "claims": [
+      {
+        "claim_id": "c1",
+        "status": "verified",
+        "sources": [
+          {
+            "title": "Consumer Behavior Survey 2024",
+            "url": "https://example.com/survey-2024",
+            "source_type": "research",
+            "snippet": "73% of consumers prioritize convenience over price when making purchasing decisions."
+          },
+          {
+            "title": "Retail Market Analysis Report",
+            "url": "https://example.com/retail-report",
+            "source_type": "research",
+            "snippet": "Convenience-driven shopping behavior has increased by 45% since 2020."
+          },
+          {
+            "title": "Industry Trends: Convenience Economy",
+            "url": null,
+            "source_type": "research",
+            "snippet": "Market research confirms convenience is the primary decision factor for modern consumers."
+          }
+        ],
+        "verification_note": null
+      },
+      {
+        "claim_id": "c2",
+        "status": "needs_verification",
+        "sources": [],
+        "verification_note": "Price sensitivity varies by demographic and region; requires additional market-specific research."
+      }
+    ],
+    "source_analysis": {
+      "sources_used": [
+        {
+          "source_type": "user_context",
+          "label": "Survey Question 7",
+          "url": null
+        }
+      ],
+      "trust_issues": [
+        "Only web sources cited; no peer-reviewed or company data.",
+        "2 claim(s) have attribution gaps in source linking."
+      ],
+      "missing_source_types": [
+        "research",
+        "company",
+        "web"
+      ]
+    },
+    "logic": {
+      "conclusion": "Users prefer convenience.",
+      "reasoning_path": [
+        {
+          "step_id": "r1",
+          "text": "Survey results show a majority favor convenience over price.",
+          "evidence_links": [
+            {
+              "url": null,
+              "label": "Survey Question 7"
+            }
+          ],
+          "expandable_detail": "Evidence Used: 73% of respondents selected convenience"
+        },
+        {
+          "step_id": "r2",
+          "text": "Demand is driven by ease of access rather than price sensitivity.",
+          "evidence_links": [
+            {
+              "url": null,
+              "label": "Survey Question 7"
+            }
+          ],
+          "expandable_detail": "Evidence Used: 73% prioritized convenience over price; 73% of respondents selected convenience"
+        }
+      ],
+      "logical_gaps": [
+        "Conclusion assumes survey respondents represent the broader target market without validation.",
+        "Survey sample size and demographic breakdown not disclosed, limiting generalizability.",
+        "Price sensitivity may still be a factor for specific segments not captured in the survey.",
+        "External market conditions and competitor presence not considered in the analysis."
+      ],
+      "alternate_perspectives": [
+        "Counter-evidence suggests: 19% selected price",
+        "Key assumption to validate: Users prefer convenience.",
+        "Alternative interpretations may exist based on different source priorities."
+      ],
+      "critique": "Reasoning has 2 gap(s) that weaken the conclusion."
+    },
+    "missing_factors": [
+      {
+        "heading": "Sample Size and Demographics",
+        "summary": "Survey methodology and respondent breakdown not provided."
+      },
+      {
+        "heading": "Market Segmentation",
+        "summary": "No analysis of how preferences vary across user segments."
+      },
+      {
+        "heading": "External Market Research",
+        "summary": "No third-party data to validate survey findings."
+      }
+    ],
+    "answer_quality": {
+      "clarity_note": "Claims are stated, but 2 lack complete source support.",
+      "completeness_note": "Fallback extraction used; limited detail available.",
+      "actionability_note": "Recommendation may be premature; fill attribution gaps before deciding.",
+      "summary": "Claims are stated, but 2 lack complete Claims are stated, but 2 lack complete source support. Fallback extraction used; limited detail available."
+    }
+  },
+  "regeneration": {
+    "improved_answer": "Users prefer convenience. Price is not a major factor.\n\n## Improvements Based on Evaluation\n\n## External Research Sources\nNo research sources were used to validate claims.\n\n## Company Data Sources\nNo company sources were used to validate claims.\n\n## Web Sources Sources\nNo web sources were used to validate claims.",
+    "changes_summary": [
+      "Added external research sources discussion",
+      "Added company data sources discussion",
+      "Added web sources sources discussion",
+      "Addressed logical gaps in reasoning",
+      "Adjusted tone for intermediate audience"
+    ],
+    "recommended_inputs": [
+      "Specify expertise level (beginner/intermediate/expert)",
+      "Define your goal for this evaluation",
+      "Enable research sources for additional context",
+      "Enable company sources for additional context",
+      "Provide more authoritative sources (research, company data)"
+    ],
+    "addressed_criteria": [
+      "missing_factors",
+      "improve_answer_quality",
+      "logic_reasoning"
+    ]
+  },
+  "meta": {
+    "model": "mock",
+    "duration_ms": 0,
+    "claim_verification_enabled": false,
+    "dimensions": [
+      "claim_verification",
+      "source_transparency",
+      "logic_reasoning",
+      "missing_factors",
+      "improve_answer_quality"
+    ]
+  }
+}

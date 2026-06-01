@@ -1,9 +1,0 @@
-requests
-beautifulsoup4
-chromadb
-schedule
-python-dotenv
-markdownify
-groq
-fastapi
-uvicorn

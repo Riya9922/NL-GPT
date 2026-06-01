@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/api/client.ts","./src/components/highlights/highlightedresponse.tsx","./src/components/input/contextinputs.tsx","./src/components/panel/evaluationpanel.tsx","./src/components/reasoning/reasoningpath.tsx","./src/hooks/useevaluationform.ts","./src/types/evaluation.ts"],"version":"5.9.3"}
