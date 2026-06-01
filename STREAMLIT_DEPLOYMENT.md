@@ -1,5 +1,20 @@
 # Streamlit Cloud Deployment Guide
 
+## ⚠️ Important: Streamlit Cloud Limitation
+
+**Streamlit Cloud is designed for Streamlit apps only, NOT as a REST API server.**
+
+This Streamlit app serves as a **demonstration interface** where you can:
+- Test the evaluation pipeline directly through Python function calls
+- View API documentation and examples
+- See live status and configuration
+
+**For production API usage** (calling endpoints from frontend/external apps):
+- Deploy the backend separately on **Railway**, **Render**, or **AWS/GCP/Azure**
+- See "Alternative Deployments" section below
+
+---
+
 ## 📋 Main File Path
 
 **Main file for Streamlit:** `streamlit_app.py`
@@ -170,3 +185,121 @@ For issues:
 - Review logs in Streamlit dashboard
 - Verify all secrets are set correctly
 - Test API endpoints with curl/Postman first
+
+---
+
+## 🚂 Alternative: Deploy Backend on Railway (Recommended for API)
+
+**Railway** is ideal for deploying the FastAPI backend as a standalone API server:
+
+### Steps:
+
+1. **Go to** [railway.app](https://railway.app)
+
+2. **Create New Project**
+   - Click "New Project" → "Deploy from GitHub repo"
+   - Select `Riya9922/NL-GPT`
+
+3. **Configure Root Directory**
+   - In Railway settings, set **Root Directory** to `backend`
+   - Railway will auto-detect it's a Python app
+
+4. **Add Environment Variables**
+   ```bash
+   MOCK_MODE=false
+   GROQ_API_KEY=gsk_your_api_key_here
+   LLM_PROVIDER=groq
+   LLM_MODEL_ANALYSIS=llama-3.1-8b-instant
+   LLM_MODEL_EVAL=llama-3.3-70b-versatile
+   LLM_MODEL_REGEN=llama-3.3-70b-versatile
+   CORS_ORIGINS=https://your-vercel-app.vercel.app
+   ```
+
+5. **Add Start Command** (if not auto-detected)
+   ```bash
+   uvicorn app.main:app --host 0.0.0.0 --port $PORT
+   ```
+
+6. **Deploy**
+   - Railway will deploy automatically
+   - You'll get a URL like: `https://your-app.up.railway.app`
+
+7. **Test**
+   ```bash
+   curl https://your-app.up.railway.app/health
+   ```
+
+8. **Connect Frontend**
+   - Deploy frontend to Vercel
+   - Set `VITE_API_BASE=https://your-app.up.railway.app`
+
+---
+
+## 🎨 Alternative: Deploy Backend on Render
+
+**Render** is another excellent option for FastAPI:
+
+### Steps:
+
+1. **Go to** [render.com](https://render.com)
+
+2. **Create New Web Service**
+   - Click "New" → "Web Service"
+   - Connect GitHub repo: `Riya9922/NL-GPT`
+
+3. **Configure**
+   - **Root Directory:** `backend`
+   - **Environment:** Python
+   - **Build Command:** `pip install -r requirements.txt`
+   - **Start Command:** `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+
+4. **Add Environment Variables**
+   - Same as Railway (see above)
+
+5. **Deploy**
+   - Click "Create Web Service"
+   - You'll get a URL like: `https://your-app.onrender.com`
+
+---
+
+## ☁️ Alternative: Deploy Backend on AWS/GCP/Azure
+
+For enterprise deployments:
+
+### AWS (using Elastic Beanstalk)
+```bash
+cd backend
+eb init
+eb create
+# Configure environment variables in EB console
+```
+
+### Google Cloud Run
+```bash
+cd backend
+gcloud run deploy --source .
+# Set environment variables in Cloud Console
+```
+
+### Azure App Service
+```bash
+cd backend
+az webapp up --name your-app-name
+# Configure settings in Azure Portal
+```
+
+---
+
+## 📊 Deployment Comparison
+
+| Platform | Best For | Cost | Complexity |
+|----------|----------|------|------------|
+| **Streamlit Cloud** | Demo/testing | Free | Easy |
+| **Railway** | Production API | $5-20/mo | Easy |
+| **Render** | Production API | Free-$20/mo | Easy |
+| **AWS/GCP/Azure** | Enterprise | Variable | Medium |
+
+**Recommendation:**
+- Use **Streamlit Cloud** for demos and testing
+- Use **Railway** or **Render** for production API serving
+- Connect frontend on **Vercel** to your backend URL
