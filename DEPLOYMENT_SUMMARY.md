@@ -197,6 +197,9 @@ After backend is deployed:
 
 ## 🐛 Common Issues
 
+### Issue: "ModuleNotFoundError: No module named 'app'"
+**Solution:** This is now fixed! The `streamlit_app.py` automatically adds the `backend/` directory to Python path.
+
 ### Issue: "Module not found"
 **Solution:** Ensure `requirements.txt` exists at root level (it does).
 
