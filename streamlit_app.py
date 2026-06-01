@@ -9,7 +9,9 @@ import time
 import sys
 import os
 
-# Add the current directory to Python path
+# Add the backend directory to Python path so we can import the app module
+backend_path = os.path.join(os.path.dirname(__file__), "backend")
+sys.path.insert(0, backend_path)
 sys.path.insert(0, os.path.dirname(__file__))
 
 # Import the FastAPI app
