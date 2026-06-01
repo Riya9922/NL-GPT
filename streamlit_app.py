@@ -10,10 +10,18 @@ import sys
 import os
 import json
 
-# Add the backend directory to Python path so we can import the app module
-backend_path = os.path.join(os.path.dirname(__file__), "backend")
+# Get the directory where this script is located
+script_dir = os.path.dirname(os.path.abspath(__file__))
+backend_path = os.path.join(script_dir, "backend")
+
+# Add both paths to sys.path
 sys.path.insert(0, backend_path)
-sys.path.insert(0, os.path.dirname(__file__))
+sys.path.insert(0, script_dir)
+
+# Debug: Print paths (will show in Streamlit logs)
+print(f"[DEBUG] Script directory: {script_dir}")
+print(f"[DEBUG] Backend path: {backend_path}")
+print(f"[DEBUG] sys.path: {sys.path[:3]}")
 
 # Import the FastAPI app and services
 from app.main import app
