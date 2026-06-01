@@ -1,64 +1,44 @@
 # AI Output Evaluation Tool
 
 [![Deploy Backend on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/Riya9922/NL-GPT)
-[![Deploy Frontend](https://vercel.com/button)](https://vercel.com/new)
+[![Deploy Frontend on Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Riya9922/NL-GPT&root-directory=frontend&env=VITE_API_BASE)
 
 Evaluate AI-generated responses across five dimensions with transparent attribution and optional answer improvement.
 
 Architecture: [`Docs/00_Architecture_Index.md`](Docs/00_Architecture_Index.md)
 
-## 🚀 Deployment
+## 🌐 Live Demo
 
-### ⚠️ Important: Deployment Options
-
-**Streamlit Cloud** is for **demonstration only** (no REST API endpoints).
-
-**For production API usage**, deploy the backend on **Railway** or **Render**.
+**Frontend:** [https://your-app.vercel.app](https://vercel.com/new/clone?repository-url=https://github.com/Riya9922/NL-GPT&root-directory=frontend&env=VITE_API_BASE)  
+**Backend API:** Deploy on Railway (see below)
 
 ---
 
-### Backend (Railway/Render) - Recommended for API
+## 🚀 Quick Deployment (Recommended)
 
-**For Production API endpoints that your frontend can call:**
+### Step 1: Deploy Backend (Railway)
 
-1. **Deploy on Railway** (Easiest)
-   - Click the Railway button above
-   - Set **Root Directory** to `backend`
-   - Add environment variables:
-     ```bash
-     MOCK_MODE=false
-     GROQ_API_KEY=gsk_your_key_here
-     CORS_ORIGINS=https://your-vercel-app.vercel.app
-     ```
-   - Get your backend URL (e.g., `https://your-app.up.railway.app`)
-
-2. **Deploy on Render** (Alternative)
-   - See [RAILWAY_DEPLOYMENT.md](RAILWAY_DEPLOYMENT.md) for detailed steps
-
-3. **Test Backend**
+1. Click the **Railway** button above
+2. Set **Root Directory** to `backend`
+3. Add environment variables:
    ```bash
-   curl https://your-app.up.railway.app/health
+   MOCK_MODE=false
+   GROQ_API_KEY=gsk_your_key_here
+   CORS_ORIGINS=https://your-vercel-app.vercel.app
    ```
+4. Deploy and copy your backend URL
 
-### Demo Interface (Streamlit Cloud)
+### Step 2: Deploy Frontend (Vercel)
 
-**For testing and demonstrations only** (not for API usage):
+1. Click the **Vercel** button above
+2. **Root Directory:** `frontend`
+3. Add environment variable:
+   ```bash
+   VITE_API_BASE=https://your-backend-url.railway.app
+   ```
+4. Deploy and share your frontend URL!
 
-- **Main file:** `streamlit_app.py`
-- Test evaluation functions directly through Python
-- View API documentation and examples
-- See [STREAMLIT_DEPLOYMENT.md](STREAMLIT_DEPLOYMENT.md)
-
----
-
-### Frontend (Vercel)
-
-1. Import from `Riya9922/NL-GPT` at [vercel.com/new](https://vercel.com/new)
-2. Set environment variable: `VITE_API_BASE=https://your-backend-url.railway.app`
-3. Root directory: `frontend`
-4. Deploy!
-
-See [RAILWAY_DEPLOYMENT.md](RAILWAY_DEPLOYMENT.md) for complete instructions.
+See [VERCEL_DEPLOYMENT.md](VERCEL_DEPLOYMENT.md) for detailed instructions.
 
 ---
 
