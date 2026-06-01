@@ -10,7 +10,7 @@ Architecture: [`Docs/00_Architecture_Index.md`](Docs/00_Architecture_Index.md)
 ## 🌐 Live Demo
 
 **Frontend:** [https://your-app.vercel.app](https://vercel.com/new/clone?repository-url=https://github.com/Riya9922/NL-GPT&root-directory=frontend&env=VITE_API_BASE)  
-**Backend API:** Deploy on Railway (see below)
+**Backend (Streamlit):** https://nl-gpt-azzfyfpjss6xw5tsgo6lc.streamlit.app
 
 ---
 

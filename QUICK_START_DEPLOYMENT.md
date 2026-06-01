@@ -94,21 +94,24 @@ Should see:
 
 ---
 
+## 🎯 Your Deployment URLs
+
+**Backend (Streamlit):** `https://nl-gpt-azzfyfpjss6xw5tsgo6lc.streamlit.app`  
+**Frontend (Vercel):** `https://your-app.vercel.app` (after deployment)
+
+---
+
 ## Step 3: Connect Backend and Frontend 🔗
 
-### 3.1 Update Backend CORS
+### 3.1 Update Backend CORS (Streamlit)
 
-Go back to Railway dashboard:
+Your Streamlit backend needs to allow your Vercel frontend. Update the `CORS_ORIGINS` in your Streamlit secrets:
 
-1. Click on your project
-2. Click **"Variables"** tab
-3. Edit `CORS_ORIGINS`:
-   ```bash
-   CORS_ORIGINS=https://your-app.vercel.app,https://your-app-git-main.vercel.app,https://your-app.vercel.app
-   ```
-   Replace `your-app` with your actual Vercel app name.
-4. Click **"Add"**
-5. Railway will redeploy automatically
+```bash
+CORS_ORIGINS=https://your-app.vercel.app,https://your-app-git-main.vercel.app
+```
+
+Replace `your-app` with your actual Vercel app name.
 
 ### 3.2 Test Full Integration
 
