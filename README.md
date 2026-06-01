@@ -1,8 +1,39 @@
 # AI Output Evaluation Tool
 
+[![Deploy Backend](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io)
+[![Deploy Frontend](https://vercel.com/button)](https://vercel.com/new)
+
 Evaluate AI-generated responses across five dimensions with transparent attribution and optional answer improvement.
 
 Architecture: [`Docs/00_Architecture_Index.md`](Docs/00_Architecture_Index.md)
+
+## 🚀 Deployment
+
+### Backend (Streamlit Cloud)
+
+**Main file:** `streamlit_app.py`
+
+1. Go to [share.streamlit.io](https://share.streamlit.io)
+2. Connect GitHub repo: `Riya9922/NL-GPT`
+3. Main file: `streamlit_app.py`
+4. Add secrets (see [STREAMLIT_DEPLOYMENT.md](STREAMLIT_DEPLOYMENT.md)):
+   ```toml
+   MOCK_MODE = "false"
+   GROQ_API_KEY = "gsk_your_key_here"
+   CORS_ORIGINS = "https://your-vercel-app.vercel.app"
+   ```
+5. Deploy!
+
+### Frontend (Vercel)
+
+1. Import from `Riya9922/NL-GPT` at [vercel.com/new](https://vercel.com/new)
+2. Set environment variable: `VITE_API_BASE=https://your-streamlit-app.streamlit.app`
+3. Root directory: `frontend`
+4. Deploy!
+
+See [STREAMLIT_DEPLOYMENT.md](STREAMLIT_DEPLOYMENT.md) for detailed instructions.
+
+---
 
 ## Phase 1 status
 
