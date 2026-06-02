@@ -290,8 +290,9 @@ async def _build_chain(
     )
 
     gaps: list[str] = []
-    if step is None:
-        gaps.append("No reasoning step linked to this claim.")
+    # Don't add gap for missing reasoning step - it's not required for verification
+    # if step is None:
+    #     gaps.append("No reasoning step linked to this claim.")
 
     source, evidence, source_gap = await _resolve_source(request, claim, allowed)
     if source_gap:

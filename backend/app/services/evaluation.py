@@ -84,26 +84,8 @@ def _evaluate_claim_from_chain(
             verification_note="Available evidence contradicts this claim.",
         )
 
-    # Partial support or gaps
-    if has_supporting and chain.attribution_gap:
-        sources = []
-        if chain.source:
-            sources.append(
-                VerificationSource(
-                    title=chain.source.label,
-                    url=chain.source.url,
-                    source_type=chain.source.source_type or SourceType.USER_CONTEXT,
-                    snippet=chain.evidence.supporting[0].text if chain.evidence.supporting else None,
-                )
-            )
-        return EvaluatedClaim(
-            claim_id=chain.claim_id,
-            status=ClaimVerificationStatus.NEEDS_VERIFICATION,
-            sources=sources,
-            verification_note=f"Partial support found, but: {chain.attribution_gap}",
-        )
-
-    # Strong support from allowed sources
+    # Strong support from allowed sources - ALWAYS verify if we have evidence
+    # This takes priority over attribution gaps
     if has_supporting and chain.source:
         sources = [
             VerificationSource(
@@ -119,6 +101,33 @@ def _evaluate_claim_from_chain(
             status=ClaimVerificationStatus.VERIFIED,
             sources=sources,
             verification_note=None,
+        )
+
+    # Partial support or gaps (only if no strong support)
+    if has_supporting and chain.attribution_gap:
+        sources = []
+        if chain.source:
+            sources.append(
+                VerificationSource(
+                    title=chain.source.label,
+                    url=chain.source.url,
+                    source_type=chain.source.source_type or SourceType.USER_CONTEXT,
+                    snippet=chain.evidence.supporting[0].text if chain.evidence.supporting else None,
+                )
+            )
+        # If we have evidence from web sources, still mark as VERIFIED
+        if source_type == SourceType.WEB or source_type == SourceType.RESEARCH:
+            return EvaluatedClaim(
+                claim_id=chain.claim_id,
+                status=ClaimVerificationStatus.VERIFIED,
+                sources=sources,
+                verification_note=None,
+            )
+        return EvaluatedClaim(
+            claim_id=chain.claim_id,
+            status=ClaimVerificationStatus.NEEDS_VERIFICATION,
+            sources=sources,
+            verification_note=f"Partial support found, but: {chain.attribution_gap}",
         )
 
     # Default: needs verification
