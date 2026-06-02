@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     llm_model_eval: str = "llama-3.3-70b-versatile"
     llm_model_regen: str = "llama-3.3-70b-versatile"
     search_api_key: str | None = None
-    enable_web_search: bool = False
+    enable_web_search: bool = True  # Enable automatic web search for source verification
     max_response_chars: int = 32_000
     max_claims: int = 40
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
