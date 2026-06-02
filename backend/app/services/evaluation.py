@@ -40,6 +40,9 @@ from app.models.request import AnswerQualityIntent, EvaluationRequest
 
 logger = logging.getLogger(__name__)
 
+# FEATURE FLAG: Set to False to revert to the old 'Missing Data Sources' logic
+USE_ANGLES_FOR_MISSING_FACTORS = True
+
 
 def _evaluate_claims_toggle_off() -> list[EvaluatedClaim]:
     """When claim verification is disabled, return empty list."""
@@ -52,19 +55,39 @@ def _evaluate_claim_from_chain(
     internal_allowed: bool,
 ) -> EvaluatedClaim:
     """Evaluate a single claim using its attribution chain."""
-    # Opinion claims are not applicable for verification
-    if claim_type == ClaimType.OPINION:
+    # Check if we have supporting evidence from allowed sources
+    has_supporting = len(chain.evidence.supporting) > 0
+    has_counter = len(chain.evidence.counter) > 0
+    source_type = chain.source.source_type if chain.source else None
+
+    # Contradicting evidence present - mark as NEEDS_VERIFICATION (yellow)
+    # This catches false statements like "He is not the prime minister"
+    if has_counter and not has_supporting:
+        sources = []
+        if chain.source:
+            sources.append(
+                VerificationSource(
+                    title=chain.source.label,
+                    url=chain.source.url,
+                    source_type=chain.source.source_type or SourceType.USER_CONTEXT,
+                    snippet=chain.evidence.counter[0].text if chain.evidence.counter else None,
+                )
+            )
+        return EvaluatedClaim(
+            claim_id=chain.claim_id,
+            status=ClaimVerificationStatus.NEEDS_VERIFICATION,
+            sources=sources,
+            verification_note="Evidence suggests the opposite of this claim.",
+        )
+
+    # Opinion claims are not applicable for verification (but only if no contradicting evidence)
+    if claim_type == ClaimType.OPINION and not has_counter:
         return EvaluatedClaim(
             claim_id=chain.claim_id,
             status=ClaimVerificationStatus.NOT_APPLICABLE,
             sources=[],
             verification_note="Opinion-based claim; verification not applicable.",
         )
-
-    # Check if we have supporting evidence from allowed sources
-    has_supporting = len(chain.evidence.supporting) > 0
-    has_counter = len(chain.evidence.counter) > 0
-    source_type = chain.source.source_type if chain.source else None
 
     # Internal knowledge alone cannot verify
     if source_type == SourceType.INTERNAL and not internal_allowed:
@@ -424,6 +447,68 @@ def _build_missing_factors(
     return missing[:6]
 
 
+async def _build_missing_factors_angles(
+    request: EvaluationRequest,
+    settings: Settings,
+) -> list[MissingFactor]:
+    """Phase 4.5 Alternative: Missing factors as 'Angles to think from'."""
+    from app.adapters.groq_client import create_groq_client
+    
+    if settings.mock_mode or not settings.effective_llm_api_key:
+        return [
+            MissingFactor(
+                heading="Unless...",
+                summary="Fallback mode: LLM not configured."
+            )
+        ]
+        
+    client = create_groq_client(settings)
+    
+    system_prompt = (
+        "You are an AI output evaluator. Output ONLY valid JSON. "
+        "Your task is to identify 'Missing Factors', which are new angles, scenarios, or caveats to think from that the response missed.\n"
+        "Frame them as 'Unless [condition]' or 'What if [scenario]'.\n"
+        "Example output:\n"
+        "{\n"
+        '  "missing_factors": [\n'
+        '    {"heading": "Unless competitors are opening", "summary": "One line reasoning explaining this angle."},\n'
+        '    {"heading": "What if there is a sudden market shift", "summary": "One line reasoning."}\n'
+        "  ]\n"
+        "}\n"
+        "Provide 3-5 factors."
+    )
+    
+    user_content = f"User Query: {request.user_query}\n\nAI Response:\n{request.ai_response}"
+    
+    try:
+        response = await client.chat.completions.create(
+            model=settings.llm_model_analysis,
+            temperature=0.7,
+            response_format={"type": "json_object"},
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_content},
+            ],
+        )
+        
+        raw = response.choices[0].message.content or "{}"
+        data = json.loads(raw)
+        
+        factors_data = data.get("missing_factors", [])
+        missing = []
+        for f in factors_data:
+            missing.append(
+                MissingFactor(
+                    heading=f.get("heading", "Unknown Factor"),
+                    summary=f.get("summary", "")[:200]
+                )
+            )
+        return missing[:5]
+    except Exception as exc:
+        logger.error("LLM missing factors extraction failed: %s", exc)
+        return []
+
+
 def _build_answer_quality_notes(
     analysis: AnalysisResult,
     attribution: AttributionResult,
@@ -511,7 +596,10 @@ async def evaluate(
     logic = _build_logic_evaluation(analysis, attribution)
 
     # 4. Missing factors
-    missing_factors = _build_missing_factors(analysis, attribution, request)
+    if USE_ANGLES_FOR_MISSING_FACTORS:
+        missing_factors = await _build_missing_factors_angles(request, settings)
+    else:
+        missing_factors = _build_missing_factors(analysis, attribution, request)
 
     # 5. Answer quality notes (if criterion requested)
     answer_quality = None
