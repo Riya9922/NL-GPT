@@ -35,6 +35,7 @@ async def run_evaluation(req: EvaluationRequest) -> EvaluationResponse:
         logger.info("🔍 Auto-searching for web sources...")
         preliminary_analysis = await analyze(req)
         claim_texts = [c.text for c in preliminary_analysis.claims[:5]]
+        logger.info(f"📋 Extracted {len(claim_texts)} claims to verify")
         
         # Search for sources
         web_sources = await auto_search_sources(
@@ -46,26 +47,41 @@ async def run_evaluation(req: EvaluationRequest) -> EvaluationResponse:
         # Add web sources as citations
         if web_sources:
             logger.info(f"✅ Found {len(web_sources)} web sources")
+            for i, src in enumerate(web_sources):
+                logger.info(f"  Source {i+1}: {src.get('title')} - {src.get('url')}")
+            
             new_citations = list(req.citations)
             for i, source in enumerate(web_sources):
-                new_citations.append(
-                    Citation(
-                        index=len(new_citations) + 1,
-                        title=source.get("title"),
-                        url=source.get("url"),
-                        raw=source.get("snippet"),
-                    )
+                citation = Citation(
+                    index=len(new_citations) + 1,
+                    title=source.get("title"),
+                    url=source.get("url"),
+                    raw=source.get("snippet"),
                 )
+                new_citations.append(citation)
+                logger.info(f"  Added citation {citation.index}: {citation.title}")
+            
             req = req.model_copy(update={"citations": new_citations})
+            logger.info(f"📎 Total citations now: {len(req.citations)}")
+        else:
+            logger.warning("⚠️ No web sources found!")
+    else:
+        logger.info(f"⏭️ Skipping auto-search: enable_web_search={settings.enable_web_search}, claim_verification={req.claim_verification_enabled}")
 
     # Phase 3: Extract claims, assumptions, reasoning steps
+    logger.info("🔬 Phase 3: Analyzing response...")
     analysis = await analyze(req)
+    logger.info(f"📊 Found {len(analysis.claims)} claims in analysis")
     
     # Phase 3.5: Build attribution chains
+    logger.info(f"🔗 Phase 3.5: Building attribution chains with {len(req.citations)} citations...")
     attribution = await attribute(req, analysis)
+    logger.info(f"✅ Attribution complete: {len(attribution.chains)} chains built")
     
     # Phase 4: Evaluate across all dimensions
+    logger.info("📈 Phase 4: Evaluating...")
     evaluation = await evaluate(req, analysis, attribution)
+    logger.info(f"✅ Evaluation complete: {len(evaluation.claims)} claims evaluated")
     
     # Phase 5: Regeneration (optional, triggered by criteria + flag)
     regeneration = await regenerate(req, analysis, attribution, evaluation)
