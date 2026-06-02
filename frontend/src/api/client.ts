@@ -59,9 +59,12 @@ export async function evaluate(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(request),
     });
-  } catch {
+  } catch (err) {
+    const apiBase = import.meta.env.VITE_API_BASE || "(not set)";
     throw new Error(
-      "Cannot reach the API. Start the backend: cd backend && uvicorn app.main:app --reload --port 8001",
+      `Cannot reach the API at ${apiBase}. ` +
+      `Check that VITE_API_BASE is set in Vercel environment variables. ` +
+      `Error: ${err instanceof Error ? err.message : String(err)}`,
     );
   }
 
