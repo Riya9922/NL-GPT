@@ -468,14 +468,15 @@ async def _build_missing_factors_angles(
         "You are an AI output evaluator. Output ONLY valid JSON. "
         "Your task is to identify 'Missing Factors', which are new angles, scenarios, or caveats to think from that the response missed.\n"
         "Frame them as 'Unless [condition]' or 'What if [scenario]'.\n"
-        "Example output:\n"
+        "CRITICAL: If the AI response is a simple, undeniable fact (e.g., 'Delhi is the capital of India', 'India's prime minister is Narendra Modi') and requires no alternative angles, return an empty array [] for missing_factors.\n"
+        "Example output for complex response:\n"
         "{\n"
         '  "missing_factors": [\n'
         '    {"heading": "Unless competitors are opening", "summary": "One line reasoning explaining this angle."},\n'
         '    {"heading": "What if there is a sudden market shift", "summary": "One line reasoning."}\n'
         "  ]\n"
         "}\n"
-        "Provide 3-5 factors."
+        "Provide 0 factors if it's a simple fact, or 3-5 factors if it's a complex response."
     )
     
     user_content = f"User Query: {request.user_query}\n\nAI Response:\n{request.ai_response}"
