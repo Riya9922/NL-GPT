@@ -33,13 +33,30 @@ app = FastAPI(
     description="Evaluate AI outputs — Phase 2 input collection",
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.cors_origin_list,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Allow all origins in production for Vercel preview URLs
+# In production (when not localhost), allow all origins
+import os
+is_production = os.getenv("RAILWAY_STATIC_URL") or os.getenv("RENDER") or os.getenv("VERCEL")
+allow_all_origins = bool(is_production)
+
+if allow_all_origins:
+    logger.info("🌐 Production mode: Allowing all CORS origins")
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],  # Allow all origins in production
+        allow_credentials=False,  # Must be False when using *
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+else:
+    logger.info("🏠 Development mode: Using configured CORS origins")
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.cors_origin_list,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 
 @app.exception_handler(AppError)
