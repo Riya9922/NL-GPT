@@ -71,15 +71,29 @@ def _align_span_to_text(text: str, claim_text: str) -> TextSpan | None:
     if not claim_text or not text:
         return None
 
+    # 1. Exact match
     pos = text.find(claim_text)
-    if pos == -1:
-        # Try case-insensitive
-        pos = text.lower().find(claim_text.lower())
+    if pos != -1:
+        return TextSpan(start=pos, end=pos + len(claim_text))
 
-    if pos == -1:
-        return None
+    # 2. Case-insensitive match
+    pos = text.lower().find(claim_text.lower())
+    if pos != -1:
+        return TextSpan(start=pos, end=pos + len(claim_text))
 
-    return TextSpan(start=pos, end=pos + len(claim_text))
+    # 3. Fuzzy match (handles missing apostrophes, punctuation, whitespace changes)
+    words = [w for w in re.split(r'\W+', claim_text) if w]
+    if words:
+        # \W* allows arbitrary punctuation/spaces between words
+        pattern = r'(?i)' + r'\W*'.join(re.escape(w) for w in words)
+        try:
+            match = re.search(pattern, text)
+            if match:
+                return TextSpan(start=match.start(), end=match.end())
+        except Exception:
+            pass
+
+    return None
 
 
 async def _extract_with_llm(
