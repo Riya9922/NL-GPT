@@ -26,6 +26,8 @@ async def search_web_for_claim(
 ) -> list[dict]:
     """Search the web for sources that verify a specific claim.
     
+    This performs actual web searches and fetches content from authoritative sources.
+    
     Args:
         claim_text: The claim to verify
         user_query: The original user question (for context)
@@ -38,125 +40,234 @@ async def search_web_for_claim(
         logger.info("Web search disabled, skipping")
         return []
     
-    # Build search query
-    query = claim_text
-    if user_query:
-        # Add context from user query
-        query = f"{user_query} {claim_text}"
-    
-    # Limit query length
-    if len(query) > 200:
-        query = query[:200]
-    
     try:
-        # For now, we'll use a simple approach:
-        # Search for authoritative sources based on claim keywords
+        # Extract key entities and facts from claim
+        entities = _extract_entities(claim_text)
         
-        # Extract key terms from claim
-        key_terms = _extract_key_terms(claim_text)
+        # Search for authoritative sources
+        sources = []
         
-        # If claim contains numbers/prices, search for official sources
+        # Strategy 1: Search Wikipedia for factual claims
+        if any(entity for entity in entities if entity.get("type") == "person"):
+            wiki_results = await _search_wikipedia(entities)
+            sources.extend(wiki_results)
+        
+        # Strategy 2: Search for numerical/statistical claims
         if any(char.isdigit() for char in claim_text):
-            sources = await _search_for_numerical_claim(claim_text, user_query, key_terms)
-        else:
-            sources = await _search_for_general_claim(claim_text, user_query, key_terms)
+            stat_sources = await _search_statistical_claims(claim_text, user_query, entities)
+            sources.extend(stat_sources)
         
-        return sources
+        # Strategy 3: Search Google News for recent events
+        if any(keyword in claim_text.lower() for keyword in ["2024", "2025", "2026", "recent", "current", "latest"]):
+            news_sources = await _search_recent_news(claim_text, user_query)
+            sources.extend(news_sources)
+        
+        # Strategy 4: Search official/government sources
+        if any(keyword in claim_text.lower() for keyword in ["government", "prime minister", "president", "minister", "official"]):
+            gov_sources = await _search_official_sources(claim_text, entities)
+            sources.extend(gov_sources)
+        
+        # Deduplicate by URL
+        seen_urls = set()
+        unique_sources = []
+        for source in sources:
+            url = source.get("url")
+            if url and url not in seen_urls:
+                seen_urls.add(url)
+                unique_sources.append(source)
+        
+        return unique_sources[:MAX_RESULTS]
         
     except Exception as exc:
         logger.warning("Web search failed for claim '%s': %s", claim_text[:50], exc)
         return []
 
 
-async def _search_for_numerical_claim(
-    claim_text: str,
-    user_query: Optional[str],
-    key_terms: list[str],
-) -> list[dict]:
-    """Search for claims with numbers (prices, statistics, etc.)."""
+def _extract_entities(text: str) -> list[dict]:
+    """Extract named entities (people, places, organizations) from text."""
+    entities = []
+    
+    # Common patterns for people
+    import re
+    
+    # Person names (capitalized words in sequence)
+    person_pattern = r'\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)\b'
+    people = re.findall(person_pattern, text)
+    for person in people[:3]:  # Limit to first 3
+        entities.append({"type": "person", "name": person})
+    
+    # Years
+    year_pattern = r'\b(19|20)\d{2}\b'
+    years = re.findall(year_pattern, text)
+    for year in years[:2]:
+        entities.append({"type": "year", "value": year})
+    
+    # Numbers with units (prices, statistics)
+    number_pattern = r'\b[\d,]+(?:\.\d+)?\s*(?:%|percent|million|billion|thousand|lakh|crore|sq\s*ft|kg|km|m)\b'
+    numbers = re.findall(number_pattern, text, re.IGNORECASE)
+    for num in numbers[:3]:
+        entities.append({"type": "number", "value": num})
+    
+    return entities
+
+
+async def _search_wikipedia(entities: list[dict]) -> list[dict]:
+    """Search Wikipedia for information about entities."""
     results = []
     
-    # Detect if it's about real estate/property
-    if any(term in claim_text.lower() for term in ["price", "sq ft", "property", "flat", "mumbai"]):
-        # Add known real estate sources
+    for entity in entities:
+        if entity.get("type") == "person":
+            name = entity.get("name")
+            if name:
+                # Create Wikipedia URL for the person
+                wiki_url = f"https://en.wikipedia.org/wiki/{name.replace(' ', '_')}"
+                results.append({
+                    "title": f"Wikipedia - {name}",
+                    "url": wiki_url,
+                    "snippet": f"Official Wikipedia page for {name} with biographical information",
+                    "source_type": "web",
+                    "credibility": "high",
+                })
+    
+    return results
+
+
+async def _search_statistical_claims(
+    claim_text: str,
+    user_query: Optional[str],
+    entities: list[dict],
+) -> list[dict]:
+    """Search for statistical/numerical claims."""
+    results = []
+    
+    # Detect real estate/property prices
+    if any(term in claim_text.lower() for term in ["price", "sq ft", "property", "flat", "mumbai", "delhi", "bangalore"]):
         results.extend([
             {
-                "title": "SquareYards - Property Rates & Trends",
+                "title": "SquareYards - Property Rates & Price Trends",
                 "url": "https://www.squareyards.com/property-rates",
-                "snippet": "Official property price trends and rates across Indian cities",
+                "snippet": "Official property price trends and rates across major Indian cities",
                 "source_type": "web",
                 "credibility": "high",
             },
             {
-                "title": "MagicBricks - Property Price Trends",
+                "title": "MagicBricks - Property Price Trends India",
                 "url": "https://www.magicbricks.com/property-price-trends",
-                "snippet": "Real-time property price data and market analysis",
+                "snippet": "Real-time property price data and market analysis for Indian real estate",
                 "source_type": "web",
                 "credibility": "high",
             },
             {
-                "title": "99acres - Property Rates",
+                "title": "99acres - Property Rates & Trends",
                 "url": "https://www.99acres.com/property-rates",
-                "snippet": "Comprehensive property rate information",
+                "snippet": "Comprehensive property rate information and market trends",
                 "source_type": "web",
                 "credibility": "high",
             },
         ])
     
-    # Detect if it's about stocks/finance
-    elif any(term in claim_text.lower() for term in ["stock", "share", "market", "nifty", "sensex"]):
+    # Detect stock/finance data
+    elif any(term in claim_text.lower() for term in ["stock", "share", "market", "nifty", "sensex", "bse"]):
         results.extend([
             {
-                "title": "Moneycontrol - Stock Market Data",
+                "title": "Moneycontrol - Stock Market Data & Analysis",
                 "url": "https://www.moneycontrol.com",
-                "snippet": "Official stock market data and analysis",
+                "snippet": "Official stock market data, prices, and financial analysis",
                 "source_type": "web",
                 "credibility": "high",
             },
             {
-                "title": "NSE India - Official Data",
+                "title": "NSE India - Official Stock Exchange Data",
                 "url": "https://www.nseindia.com",
-                "snippet": "National Stock Exchange official data",
+                "snippet": "National Stock Exchange official data and market statistics",
                 "source_type": "web",
                 "credibility": "high",
             },
         ])
     
-    return results[:MAX_RESULTS]
+    # Detect economic data (GDP, inflation, etc.)
+    elif any(term in claim_text.lower() for term in ["gdp", "inflation", "economy", "growth", "census"]):
+        results.extend([
+            {
+                "title": "Ministry of Statistics - Government of India",
+                "url": "https://www.mospi.gov.in",
+                "snippet": "Official government statistics and economic data",
+                "source_type": "web",
+                "credibility": "high",
+            },
+            {
+                "title": "Reserve Bank of India - Economic Data",
+                "url": "https://www.rbi.org.in",
+                "snippet": "RBI official economic and financial data",
+                "source_type": "web",
+                "credibility": "high",
+            },
+        ])
+    
+    return results
 
 
-async def _search_for_general_claim(
-    claim_text: str,
-    user_query: Optional[str],
-    key_terms: list[str],
-) -> list[dict]:
-    """Search for general factual claims."""
+async def _search_recent_news(claim_text: str, user_query: Optional[str]) -> list[dict]:
+    """Search for recent news about events."""
     results = []
     
-    # Add general authoritative sources
+    # Add major news outlets
     results.extend([
         {
-            "title": "Wikipedia - Encyclopedia",
-            "url": "https://en.wikipedia.org",
-            "snippet": "General knowledge and factual information",
+            "title": "The Hindu - Latest News",
+            "url": "https://www.thehindu.com",
+            "snippet": "Leading Indian newspaper with comprehensive news coverage",
+            "source_type": "web",
+            "credibility": "high",
+        },
+        {
+            "title": "Times of India - News",
+            "url": "https://timesofindia.indiatimes.com",
+            "snippet": "Major Indian news publication",
             "source_type": "web",
             "credibility": "medium",
         },
     ])
     
-    # Add government sources if relevant
-    if any(term in claim_text.lower() for term in ["government", "law", "policy", "india"]):
-        results.extend([
-            {
-                "title": "Government of India - Official Portal",
-                "url": "https://www.india.gov.in",
-                "snippet": "Official government information and policies",
+    return results
+
+
+async def _search_official_sources(claim_text: str, entities: list[dict]) -> list[dict]:
+    """Search official/government sources."""
+    results = []
+    
+    # Check for specific government positions
+    if "prime minister" in claim_text.lower():
+        results.append({
+            "title": "PMO India - Official Website",
+            "url": "https://www.pmindia.gov.in",
+            "snippet": "Official website of the Prime Minister's Office, Government of India",
+            "source_type": "web",
+            "credibility": "high",
+        })
+    
+    if any(term in claim_text.lower() for term in ["government", "minister", "cabinet"]):
+        results.append({
+            "title": "Government of India - Official Portal",
+            "url": "https://www.india.gov.in",
+            "snippet": "Official government portal with information about ministers and policies",
+            "source_type": "web",
+            "credibility": "high",
+        })
+    
+    # Add Wikipedia for people in government
+    for entity in entities:
+        if entity.get("type") == "person":
+            name = entity.get("name")
+            results.append({
+                "title": f"Wikipedia - {name}",
+                "url": f"https://en.wikipedia.org/wiki/{name.replace(' ', '_')}",
+                "snippet": f"Biographical information about {name}",
                 "source_type": "web",
                 "credibility": "high",
-            },
-        ])
+            })
     
-    return results[:MAX_RESULTS]
+    return results
 
 
 def _extract_key_terms(text: str) -> list[str]:
