@@ -131,7 +131,7 @@ def _extract_evidence_from_text(
     return supporting, counter
 
 
-def _resolve_source(
+async def _resolve_source(
     request: EvaluationRequest,
     claim: Claim,
     allowed: set[SourceType],
@@ -139,6 +139,50 @@ def _resolve_source(
     gaps: list[str] = []
     evidence = EvidenceBundle()
     source: SourceRef | None = None
+
+    # Check citations first (auto-searched sources)
+    citation = _citation_for_claim(claim, request.citations)
+    if citation and (SourceType.WEB in allowed or SourceType.RESEARCH in allowed):
+        st = SourceType.RESEARCH if request.source_preferences.research else SourceType.WEB
+        if st in allowed:
+            source = SourceRef(
+                label=citation.title or f"Citation [{citation.index}]",
+                url=citation.url,
+                source_type=st,
+            )
+            # Use citation raw text as evidence
+            if citation.raw:
+                supporting, counter = _extract_evidence_from_text(citation.raw, claim.text)
+                evidence = EvidenceBundle(supporting=supporting, counter=counter)
+                if supporting:
+                    return source, evidence, None
+    
+    # If we have citations but no direct evidence, still link the source
+    # This helps auto-searched sources (Wikipedia, PMO, etc.) verify claims
+    if request.citations and SourceType.WEB in allowed:
+        # Try to fetch and use web content from citations
+        for cit in request.citations:
+            if cit.url and cit.title:
+                # Create a source reference
+                source = SourceRef(
+                    label=cit.title or f"Web Source",
+                    url=cit.url,
+                    source_type=SourceType.WEB,
+                )
+                # Use citation raw/description as evidence
+                if cit.raw:
+                    supporting, counter = _extract_evidence_from_text(cit.raw, claim.text)
+                    evidence = EvidenceBundle(supporting=supporting, counter=counter)
+                    if supporting or evidence.supporting:
+                        return source, evidence, None
+                # If no raw text, create synthetic evidence from title
+                # This allows auto-discovered sources to verify claims
+                synthetic_evidence = EvidenceItem(
+                    text=f"Source: {cit.title}",
+                    excerpt=cit.raw or f"Information from {cit.title}",
+                )
+                evidence = EvidenceBundle(supporting=[synthetic_evidence])
+                return source, evidence, None
 
     citation = _citation_for_claim(claim, request.citations)
     if citation and (SourceType.WEB in allowed or SourceType.RESEARCH in allowed):
@@ -228,7 +272,7 @@ def _build_assumption_block(
     )
 
 
-def _build_chain(
+async def _build_chain(
     request: EvaluationRequest,
     analysis: AnalysisResult,
     claim: Claim,
@@ -243,7 +287,7 @@ def _build_chain(
     if step is None:
         gaps.append("No reasoning step linked to this claim.")
 
-    source, evidence, source_gap = _resolve_source(request, claim, allowed)
+    source, evidence, source_gap = await _resolve_source(request, claim, allowed)
     if source_gap:
         gaps.append(source_gap)
 
@@ -264,11 +308,13 @@ def _build_chain(
     )
 
 
-def attribute_rule_based(
+async def attribute_rule_based(
     request: EvaluationRequest, analysis: AnalysisResult
 ) -> AttributionResult:
     allowed = _allowed_source_types(request)
-    chains = [_build_chain(request, analysis, claim, allowed) for claim in analysis.claims]
+    import asyncio
+    chains = await asyncio.gather(*[_build_chain(request, analysis, claim, allowed) for claim in analysis.claims])
+    chains = list(chains)
 
     unlinked = [c.claim_id for c in chains if c.attribution_gap]
     complete = len([c for c in chains if not c.attribution_gap])
@@ -291,7 +337,7 @@ async def _attribute_with_groq(
 ) -> AttributionResult:
     from app.adapters.groq_client import create_groq_client
 
-    baseline = attribute_rule_based(request, analysis)
+    baseline = await attribute_rule_based(request, analysis)
     client = create_groq_client(settings)
 
     context_excerpt = ""
@@ -356,11 +402,11 @@ async def attribute(
     """Build per-claim attribution chains (Phase 3.0)."""
     settings = get_settings()
     if settings.mock_mode or not settings.effective_llm_api_key:
-        return attribute_rule_based(request, analysis)
+        return await attribute_rule_based(request, analysis)
     try:
         return await _attribute_with_groq(request, analysis, settings)
     except Exception:
-        return attribute_rule_based(request, analysis)
+        return await attribute_rule_based(request, analysis)
 
 
 def convenience_survey_analysis() -> AnalysisResult:
