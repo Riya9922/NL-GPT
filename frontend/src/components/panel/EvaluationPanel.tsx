@@ -401,6 +401,55 @@ export function EvaluationPanel({
                   </ul>
                 </div>
               )}
+
+              {/* Action Buttons */}
+              <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-200 pt-3">
+                <button
+                  type="button"
+                  className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                  onClick={() => {
+                    const printWindow = window.open('', '', 'width=800,height=600');
+                    if (printWindow) {
+                      printWindow.document.write(`
+                        <html>
+                          <head>
+                            <title>Improved Answer</title>
+                            <style>
+                              body { font-family: system-ui, sans-serif; padding: 40px; line-height: 1.6; color: #333; }
+                            </style>
+                          </head>
+                          <body>
+                            <h2>Improved Answer</h2>
+                            <div>${result.regeneration?.improved_answer.replace(/\n/g, '<br/>')}</div>
+                          </body>
+                        </html>
+                      `);
+                      printWindow.document.close();
+                      printWindow.focus();
+                      setTimeout(() => {
+                        printWindow.print();
+                        printWindow.close();
+                      }, 250);
+                    }
+                  }}
+                >
+                  Save as PDF
+                </button>
+                <button
+                  type="button"
+                  className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                  onClick={() => navigator.clipboard.writeText(result.regeneration!.improved_answer)}
+                >
+                  Copy it
+                </button>
+                <button
+                  type="button"
+                  className="ml-auto rounded-md border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors"
+                  onClick={() => alert("Feedback received! Thank you.")}
+                >
+                  Not helpful?
+                </button>
+              </div>
             </div>
           )}
         </AccordionItem>
