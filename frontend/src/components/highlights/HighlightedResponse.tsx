@@ -102,7 +102,7 @@ export function HighlightedResponse({
           rehypePlugins={[rehypeRaw]}
           components={{
             mark: ({ node, ...props }) => {
-              const claimId = props["data-claim-id"] as string;
+              const claimId = (props as any)["data-claim-id"] as string;
               return (
                 <mark
                   {...props}
