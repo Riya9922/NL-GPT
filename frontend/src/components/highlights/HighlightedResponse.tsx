@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import rehypeRaw from "rehype-raw";
 import type {
   AnalysisResult,
   ClaimVerificationStatus,
@@ -69,43 +71,52 @@ export function HighlightedResponse({
 
   if (!enabled || segments.length === 0) {
     return (
-      <div className="mt-1 min-h-[280px] whitespace-pre-wrap rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-mono text-slate-800">
-        {text}
+      <div className="mt-1 min-h-[280px] whitespace-pre-wrap rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 prose prose-sm max-w-none">
+        <ReactMarkdown rehypePlugins={[rehypeRaw]}>{text}</ReactMarkdown>
       </div>
     );
   }
 
-  const parts: React.ReactNode[] = [];
+  let markdownString = "";
   let cursor = 0;
 
-  segments.forEach((seg, i) => {
+  segments.forEach((seg) => {
     if (seg.start > cursor) {
-      parts.push(<span key={`t-${i}-pre`}>{text.slice(cursor, seg.start)}</span>);
+      markdownString += text.slice(cursor, seg.start);
     }
-    parts.push(
-      <mark
-        key={`m-${seg.claimId}`}
-        className={`cursor-pointer rounded px-0.5 ${STATUS_CLASS[seg.status]}`}
-        onMouseEnter={() => setActiveId(seg.claimId)}
-        onMouseLeave={() => setActiveId(null)}
-        tabIndex={0}
-        role="mark"
-        aria-label={`${seg.status.replace(/_/g, " ")} claim`}
-      >
-        {text.slice(seg.start, seg.end)}
-      </mark>,
-    );
+    // We inject HTML marks with data attributes for hover events
+    markdownString += `<mark data-claim-id="${seg.claimId}" class="cursor-pointer rounded px-0.5 ${STATUS_CLASS[seg.status]}">`;
+    markdownString += text.slice(seg.start, seg.end);
+    markdownString += `</mark>`;
     cursor = Math.max(cursor, seg.end);
   });
 
   if (cursor < text.length) {
-    parts.push(<span key="tail">{text.slice(cursor)}</span>);
+    markdownString += text.slice(cursor);
   }
 
   return (
     <div className="relative">
-      <div className="mt-1 min-h-[280px] rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-mono leading-relaxed text-slate-800">
-        {parts}
+      <div className="mt-1 min-h-[280px] rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm leading-relaxed text-slate-800 prose prose-sm max-w-none">
+        <ReactMarkdown
+          rehypePlugins={[rehypeRaw]}
+          components={{
+            mark: ({ node, ...props }) => {
+              const claimId = props["data-claim-id"] as string;
+              return (
+                <mark
+                  {...props}
+                  onMouseEnter={() => setActiveId(claimId)}
+                  onMouseLeave={() => setActiveId(null)}
+                  tabIndex={0}
+                  role="mark"
+                />
+              );
+            },
+          }}
+        >
+          {markdownString}
+        </ReactMarkdown>
       </div>
       {activeId && activeEvaluated && (
         <div 
