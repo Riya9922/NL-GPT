@@ -447,7 +447,7 @@ export function EvaluationPanel({
                   className="ml-auto rounded-md border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors"
                   onClick={() => alert("Feedback received! Thank you.")}
                 >
-                  Not helpful?
+                  Incorrect output
                 </button>
               </div>
             </div>
